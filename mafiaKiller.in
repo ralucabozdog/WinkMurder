@@ -1,0 +1,56 @@
+assign(max_seconds, 30).
+assign(domain_size, 2).
+assign(max_models,-1).
+set(binary_resolution).
+set(print_gen).
+
+
+
+list(distinct).
+[Ann, Brad].
+end_of_list.
+
+
+
+formulas(utils).
+
+% POATE EXISTA DOAR UN KILLER
+killer(x) -> (killer(y) <-> x = y).
+exists x killer(x).
+
+% KILLER-UL POATE ALEGE O SINGURA DATA PE RUNDA UN ALT JUCATOR IN AFARA DE EL, CARE NU ESTE DEJA MORT
+pick(x, y) -> killer(x).
+pick(x, y) -> (pick(x, z) <-> y = z).
+pick(x, y) -> -dead(y).
+pick(x, y) -> x != y.
+
+% JUCATORUL ALES DE KILLER ESTE UCIS. TOTI CEILALTI NU SUNT UCISI
+pick(x, y) & killer(x) -> murdered(y) & (all z ((y != z) -> -murdered(z))).
+
+%EXACT UN JUCATOR ESTE UCIS
+murdered(x) -> (murdered(y) <-> x = y).
+exists x murdered(x).
+
+%CEL UCIS NU POATE FI KILLER-UL
+murdered(x) -> -killer(x).
+
+%CEL UCIS A FOST ALES DE CATRE KILLER
+exists y exists x (killer(y) & pick(y, x) & murdered(x)).
+
+end_of_list.
+
+
+
+formulas(assumptions).
+
+-dead(Ann).
+-dead(Brad).
+
+%murdered(Brad).
+
+end_of_list.
+
+
+
+formulas(goals).
+end_of_list.

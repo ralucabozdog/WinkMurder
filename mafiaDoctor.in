@@ -1,0 +1,127 @@
+assign(max_seconds, 30).
+assign(domain_size, 3).
+assign(max_models,-1).
+set(binary_resolution).
+set(print_gen).
+
+
+
+list(distinct).
+[Ann, Brad, Chris].
+end_of_list.
+
+
+
+formulas(utils).
+
+% POATE EXISTA DOAR UN KILLER
+killer(x) -> (killer(y) <-> x = y).
+exists x killer(x).
+
+% POATE EXISTA UN SINGUR DOCTOR
+doctor(x) -> (doctor(y) <-> x = y).
+exists x doctor(x).
+
+% POATE EXISTA UN SINGUR POLITIST
+policeman(x) -> (policeman(y) <-> x = y).
+exists x policeman(x).
+
+% FIECARE JUCATOR POATE AVEA CEL MULT UN ROL
+doctor(x) -> -killer(x) & -policeman(x).
+killer(x) -> -doctor(x) & -policeman(x).
+policeman(x) -> -killer(x) & -doctor(x).
+
+% KILLER-UL, DOCTORUL SI POLITISTUL POT ALEGE O SINGURA DATA PE RUNDA UN ALT JUCATOR
+pick(x, y) -> killer(x) | doctor(x) | policeman(x).
+pick(x, y) -> (pick(x, z) <-> y = z).
+pick(x, y) -> -dead(x) & -murdered(x) | -dead(x) & murdered(x) & saved(x).
+pick(x, y) -> -dead(y).
+pick(x, y) -> x != y.
+
+% JUCATORUL ALES DE KILLER ESTE UCIS. TOTI CEILALTI NU SUNT UCISI
+pick(x, y) & killer(x) -> murdered(y) & (all z ((y != z) -> -murdered(z))).
+
+% JUCATORUL ALES DE DOCTOR ESTE SALVAT. TOTI CEILALTI NU SUNT SALVATI
+pick(x, y) & doctor(x) -> saved(y) & (all z ((y != z) -> -saved(z))).
+
+% JUCATORUL ALES DE POLITIST ESTE ARESTAT. TOTI CEILALTI NU SUNT ARESTATI
+pick(x, y) & policeman(x) -> arrested(y) & (all z ((y != z) -> -arrested(z))).
+
+%DACA POLITISTUL ESTE MORT, NU SE MAI POT FACE ARESTARI
+dead(x) & policeman(x) -> (all z -arrested(z)).
+
+%DACA DOCTORUL ESTE MORT, NU SE MAI POT FACE SALVARI
+dead(x) & doctor(x) -> (all z -saved(z)).
+
+%DACA POLITISTUL ESTE UCIS SI NU ESTE SALVAT, NU SE MAI POT FACE ARESTARI
+murdered(x) & policeman(x) & -saved(x)-> (all z -arrested(z)).
+
+%DACA DOCTORUL ESTE UCIS, NU SE MAI POT FACE SALVARI
+murdered(x) & doctor(x) -> (all z -saved(z)).
+
+%EXACT UN JUCATOR ESTE UCIS
+murdered(x) -> (murdered(y) <-> x = y).
+exists x murdered(x).
+
+%CEL UCIS NU POATE FI KILLER-UL
+murdered(x) -> -killer(x).
+
+%CEL UCIS A FOST ALES DE CATRE KILLER
+exists y exists x (killer(y) & pick(y, x) & murdered(x)).
+
+%CEL MULT UN JUCATOR ESTE ARESTAT
+arrested(x) -> (arrested(y) <-> x = y).
+
+%CEL ARESTAT NU POATE FI POLITISTUL
+arrested(x) -> -policeman(x).
+
+%CEL ARESTAT A FOST ALES DE POLITIST
+arrested(x) & policeman(y) -> pick(y, x).
+
+%CEL MULT UN JUCATOR ESTE SALVAT
+saved(x) -> (saved(y) <-> x = y).
+
+%CEL SALVAT NU POATE FI DOCTORUL
+saved(x) -> -doctor(x).
+
+%CEL SALVAT A FOST ALES DE DOCTOR
+saved(x) & doctor(y) -> pick(y, x).
+
+%DOAR O SINGURA PERSOANA POATE CASTIGA
+win(x) -> (win(y) <-> x = y).
+
+%FIE KILLER-UL, FIE POLITISTUL CASTIGA
+win(x) -> killer(x) | policeman(x).
+
+%POLITISTUL CASTIGA DACA ARESTEAZA KILLER-UL
+policeman(x) & arrested(y) & killer(y) -> win(x).
+
+%DACA POLITISTUL ARESTEAZA PE ALTCINEVA IN AFARA DE KILLER NU CASTIGA NIMENI
+policeman(x) & arrested(y) & -killer(y) -> (all z -win(z)).
+
+%KILLER-UL CASTIGA DACA UCIDE POLITISTUL
+killer(x) & murdered(y) & policeman(y) & -saved(y)-> win(x).
+
+%DACA POLITISTUL ESTE UCIS, DAR ESTE SALVAT DE MEDIC, IAR APOI NU ARESTEAZA KILLER-UL, NU CASTIGA NIMENI
+killer(x) & -arrested(x) & murdered(y) & policeman(y) & saved(y)-> (all z -win(z)).
+end_of_list.
+
+
+
+formulas(assumptions).
+
+-dead(Ann).
+-dead(Brad).
+-dead(Chris).
+
+killer(Ann).
+
+saved(Chris).
+arrested(Ann).
+
+end_of_list.
+
+
+
+formulas(goals).
+end_of_list.

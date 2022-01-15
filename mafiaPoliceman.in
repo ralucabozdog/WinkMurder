@@ -1,0 +1,101 @@
+assign(max_seconds, 30).
+assign(domain_size, 3).
+assign(max_models,-1).
+set(binary_resolution).
+set(print_gen).
+
+
+
+list(distinct).
+[Ann, Brad, Chris].
+end_of_list.
+
+
+
+formulas(utils).
+
+% POATE EXISTA DOAR UN KILLER
+killer(x) -> (killer(y) <-> x = y).
+exists x killer(x).
+
+% POATE EXISTA UN SINGUR POLITIST
+policeman(x) -> (policeman(y) <-> x = y).
+exists x policeman(x).
+
+% FIECARE JUCATOR POATE AVEA CEL MULT UN ROL
+killer(x) -> -policeman(x).
+policeman(x) -> -killer(x).
+
+% KILLER-UL SI POLITISTUL POT ALEGE O SINGURA DATA PE RUNDA UN ALT JUCATOR CARE NU ESTE MORT
+% POLITISTUL TREBUIE SA FIE IN VIATA PENTRU A ALEGE
+pick(x, y) -> killer(x) | policeman(x).
+pick(x, y) -> (pick(x, z) <-> y = z).
+pick(x, y) -> -dead(x) & -murdered(x).
+pick(x, y) -> -dead(y).
+pick(x, y) -> x != y.
+
+% JUCATORUL ALES DE KILLER ESTE UCIS. TOTI CEILALTI NU SUNT UCISI
+pick(x, y) & killer(x) -> murdered(y) & (all z ((y != z) -> -murdered(z))).
+
+% JUCATORUL ALES DE POLITIST ESTE ARESTAT. TOTI CEILALTI NU SUNT ARESTATI
+pick(x, y) & policeman(x) -> arrested(y) & (all z ((y != z) -> -arrested(z))).
+
+%DACA POLITISTUL ESTE MORT, NU SE MAI POT FACE ARESTARI
+dead(x) & policeman(x) -> (all z -arrested(z)).
+
+%DACA POLITISTUL ESTE UCIS, NU SE MAI POT FACE ARESTARI
+murdered(x) & policeman(x) -> (all z -arrested(z)).
+
+%EXACT UN JUCATOR ESTE UCIS
+murdered(x) -> (murdered(y) <-> x = y).
+exists x murdered(x).
+
+%CEL UCIS NU POATE FI KILLER-UL
+murdered(x) -> -killer(x).
+
+%CEL UCIS A FOST ALES DE CATRE KILLER
+exists y exists x (killer(y) & pick(y, x) & murdered(x)).
+
+%CEL MULT UN JUCATOR ESTE ARESTAT
+arrested(x) -> (arrested(y) <-> x = y).
+
+%CEL ARESTAT NU POATE FI POLITISTUL
+arrested(x) -> -policeman(x).
+
+%CEL ARESTAT A FOST ALES DE POLITIST
+arrested(x) & policeman(y) -> pick(y, x).
+
+%DOAR O SINGURA PERSOANA POATE CASTIGA
+win(x) -> (win(y) <-> x = y).
+
+%DOAR POLITISTUL SAU KILLERUL POT CASTIGA
+win(x) -> killer(x) | policeman(x).
+
+%POLITISTUL CASTIGA DACA ARESTEAZA KILLER-UL
+policeman(x) & arrested(y) & killer(y) -> win(x).
+
+%DACA POLITISTUL ARESTEAZA PE ALTCINEVA IN AFARA DE KILLER NU CASTIGA NIMENI
+policeman(x) & arrested(y) & -killer(y) -> (all z -win(z)).
+
+%KILLER-UL CASTIGA DACA UCIDE POLITISTUL
+killer(x) & murdered(y) & policeman(y) -> win(x).
+end_of_list.
+
+
+
+formulas(assumptions).
+
+-dead(Ann).
+-dead(Brad).
+-dead(Chris).
+
+killer(Ann).
+policeman(Chris).
+arrested(Ann).
+
+end_of_list.
+
+
+
+formulas(goals).
+end_of_list.
